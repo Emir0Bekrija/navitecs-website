@@ -1,0 +1,13 @@
+node_modules/
+.idea/
+.env.local
+.env
+src.zip
+old_version.zip
+.agents
+.claude
+skills-lock.json
+prisma/
+.next/
+uploads/cvs/
+uploads/images/

@@ -1,0 +1,13 @@
+@import './fonts.css';
+@import './tailwind.css';
+@import './theme.css';
+
+@keyframes cursor-grid-scroll {
+  from { background-position: 0px 0px, 0px 0px, 0px 0px, 0px 0px; }
+  to   { background-position: 64px 64px, 64px 64px, 64px 64px, 64px 64px; }
+}
+
+@keyframes cursor-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}

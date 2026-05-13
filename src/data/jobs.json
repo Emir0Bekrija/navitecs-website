@@ -1,0 +1,72 @@
+[
+  {
+    "id": "architectural-designer",
+    "title": "Architectural Designer (Autodesk Revit)",
+    "department": "Architectural Design",
+    "location": "Remote / On-site",
+    "type": "Full-time",
+    "description": "Develop architectural concepts, detailed drawings, and coordinated Revit models for residential, commercial, and mixed-use projects.",
+    "active": true,
+    "createdAt": "2026-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "senior-bim-consultant",
+    "title": "Senior BIM Consultant",
+    "department": "BIM Consulting",
+    "location": "Remote / Hybrid",
+    "type": "Full-time",
+    "description": "Lead BIM implementation strategies, coordinate multidisciplinary Revit workflows, and support project teams in delivering high-quality digital design solutions.",
+    "active": true,
+    "createdAt": "2026-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "structural-design-engineer",
+    "title": "Structural Design Engineer (Autodesk Revit)",
+    "department": "Structural Design",
+    "location": "Remote / Hybrid",
+    "type": "Full-time",
+    "description": "Create and manage structural Revit models, produce design documentation, and collaborate closely with architectural and MEP teams.",
+    "active": true,
+    "createdAt": "2026-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "mep-design-engineer",
+    "title": "MEP Design Engineer (Revit)",
+    "department": "MEP Design",
+    "location": "Remote",
+    "type": "Full-time",
+    "description": "Design and coordinate mechanical, electrical, and plumbing systems in Autodesk Revit while ensuring accuracy, efficiency, and project compliance.",
+    "active": true,
+    "createdAt": "2026-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "project-development-manager",
+    "title": "Project Development Manager",
+    "department": "Project Development",
+    "location": "Hybrid / On-site",
+    "type": "Full-time",
+    "description": "Drive project planning, client coordination, and development strategy while overseeing BIM-based design delivery from concept through execution.",
+    "active": true,
+    "createdAt": "2026-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "junior-bim-modeler",
+    "title": "Junior BIM Modeler (Autodesk Revit)",
+    "department": "BIM Production",
+    "location": "Remote",
+    "type": "Internship",
+    "description": "Support project teams by developing Revit models, preparing documentation, and gaining hands-on experience in BIM consulting and multidisciplinary design.",
+    "active": true,
+    "createdAt": "2026-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "proffesional-vibe-coder",
+    "title": "Proffesional Vibe Coder",
+    "department": "IT or whatever",
+    "location": "Cloud",
+    "type": "Full-time",
+    "description": "Maximum vibes",
+    "active": true,
+    "createdAt": "2026-04-17T07:02:09.024Z"
+  }
+]

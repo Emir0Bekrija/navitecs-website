@@ -1,0 +1,28 @@
+[
+  {
+    "id": "app-1776411359126-60dd5d",
+    "firstName": "Tratinčica",
+    "lastName": "Travka",
+    "email": "travka@traticnica.com",
+    "phone": "+38764486684",
+    "role": "Architectural Designer (Autodesk Revit)",
+    "linkedin": "",
+    "portfolio": "",
+    "message": "",
+    "cvFileName": "1776411359121-Emir_Bekrija_CV.pdf",
+    "submittedAt": "2026-04-17T07:35:59.126Z"
+  },
+  {
+    "id": "app-1776409549405-6ere8u",
+    "firstName": "Emir",
+    "lastName": "Bekrija",
+    "email": "emir.b@navitecs.com",
+    "phone": "+387644216370",
+    "role": "Proffesional Vibe Coder",
+    "linkedin": "",
+    "portfolio": "",
+    "message": "I am vibing all the time",
+    "cvFileName": "Emir Bekrija CV.pdf",
+    "submittedAt": "2026-04-17T07:05:49.405Z"
+  }
+]
