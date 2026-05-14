@@ -1,11 +1,23 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import { CustomCursor } from "@/components/CustomCursor";
-import PromoPopup from "@/components/PromoPopup";
-import CookieConsent from "@/components/CookieConsent";
+
+const CustomCursor = dynamic(
+  () =>
+    import("@/components/CustomCursor").then((m) => ({
+      default: m.CustomCursor,
+    })),
+  { ssr: false }
+);
+const PromoPopup = dynamic(() => import("@/components/PromoPopup"), {
+  ssr: false,
+});
+const CookieConsent = dynamic(() => import("@/components/CookieConsent"), {
+  ssr: false,
+});
 
 export default function RootLayoutWrapper({
   children,

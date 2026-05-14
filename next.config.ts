@@ -18,6 +18,15 @@ const nextConfig: NextConfig = {
       static: 300,
     },
   },
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "images.unsplash.com" },
+      { protocol: "https", hostname: "www.hok.com" },
+      { protocol: "https", hostname: "miro.medium.com" },
+      { protocol: "https", hostname: "blog.novatr.com" },
+    ],
+    formats: ["image/avif", "image/webp"],
+  },
   // Prevent Node.js-only packages from being bundled for the browser.
   // mariadb and its dependencies use Node.js built-ins (net, tls, crypto, etc.)
   // and must never appear in the client bundle.

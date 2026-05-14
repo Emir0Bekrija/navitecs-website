@@ -188,8 +188,8 @@ export default function Contact() {
     <div className="overflow-x-hidden">
       <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0">
-          <div className="absolute top-20 left-10 w-96 h-96 bg-[#00AEEF]/10 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-20 right-10 w-96 h-96 bg-[#00FF9C]/10 rounded-full blur-3xl"></div>
+          <div className="absolute top-20 left-10 w-96 h-96 rounded-full bg-[radial-gradient(circle,rgba(0,174,239,0.1)_0%,transparent_70%)]"></div>
+          <div className="absolute bottom-20 right-10 w-96 h-96 rounded-full bg-[radial-gradient(circle,rgba(0,255,156,0.1)_0%,transparent_70%)]"></div>
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:64px_64px]"></div>
         </div>
 

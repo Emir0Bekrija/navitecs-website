@@ -163,8 +163,8 @@ export default function AboutClient({ aboutFeature }: Props) {
     <div className="overflow-x-hidden">
       <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0">
-          <div className="absolute top-20 left-10 w-96 h-96 bg-[#00AEEF]/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-20 right-10 w-96 h-96 bg-[#00FF9C]/10 rounded-full blur-3xl" />
+          <div className="absolute top-20 left-10 w-96 h-96 rounded-full bg-[radial-gradient(circle,rgba(0,174,239,0.1)_0%,transparent_70%)]" />
+          <div className="absolute bottom-20 right-10 w-96 h-96 rounded-full bg-[radial-gradient(circle,rgba(0,255,156,0.1)_0%,transparent_70%)]" />
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:64px_64px]" />
         </div>
 
@@ -227,11 +227,12 @@ export default function AboutClient({ aboutFeature }: Props) {
               transition={{ duration: 0.8 }}
               className="relative"
             >
-              <div className="relative rounded-2xl overflow-hidden border border-white/10">
+              <div className="relative h-[500px] rounded-2xl overflow-hidden border border-white/10">
                 <ImageWithFallback
                   src="https://images.unsplash.com/photo-1641060272821-df59e2c0b5ed?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhcmNoaXRlY3R1cmFsJTIwb2ZmaWNlJTIwd29ya3NwYWNlfGVufDF8fHx8MTc3NTQ1ODU1OHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
                   alt="NAVITECS office"
-                  className="w-full h-[500px] object-cover"
+                  className="absolute inset-0 w-full h-full object-cover"
+                  sizes="(max-width: 1024px) 100vw, 50vw"
                 />
               </div>
             </motion.div>
@@ -428,14 +429,20 @@ export default function AboutClient({ aboutFeature }: Props) {
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {expertise.map((item, index) => (
+          <motion.div
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
+          >
+            {expertise.map((item) => (
               <motion.div
                 key={item.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
+                variants={{
+                  hidden: { opacity: 0, y: 20 },
+                  visible: { opacity: 1, y: 0 },
+                }}
                 className="relative bg-white/10 border border-white/15 rounded-xl p-6 hover:bg-black/85 hover:border-white/30 duration-400 ease-in-out shadow-lg"
               >
                 <div className="inline-block p-3 bg-gradient-to-br from-[#00AEEF]/20 to-[#00FF9C]/20 rounded-xl mb-4">
@@ -445,7 +452,7 @@ export default function AboutClient({ aboutFeature }: Props) {
                 <p className="text-gray-400 text-sm">{item.description}</p>
               </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
@@ -468,14 +475,20 @@ export default function AboutClient({ aboutFeature }: Props) {
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {values.map((value, index) => (
+          <motion.div
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
+          >
+            {values.map((value) => (
               <motion.div
                 key={value.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
+                variants={{
+                  hidden: { opacity: 0, y: 20 },
+                  visible: { opacity: 1, y: 0 },
+                }}
                 className="relative bg-white/10 border border-white/15 rounded-xl p-6 hover:bg-black/85 hover:border-white/30 duration-400 ease-in-out transition-all text-center"
               >
                 <div className="w-12 h-12 bg-gradient-to-br from-[#00AEEF]/20 to-[#00FF9C]/20 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -485,7 +498,7 @@ export default function AboutClient({ aboutFeature }: Props) {
                 <p className="text-gray-400 text-sm">{value.description}</p>
               </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
     </div>

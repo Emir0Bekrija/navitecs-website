@@ -84,8 +84,8 @@ export default function HomeClient() {
     <div className="overflow-x-hidden">
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0">
-          <div className="absolute top-20 left-10 w-96 h-96 bg-[#00AEEF]/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-20 right-10 w-96 h-96 bg-[#00FF9C]/10 rounded-full blur-3xl" />
+          <div className="absolute top-20 left-10 w-96 h-96 rounded-full bg-[radial-gradient(circle,rgba(0,174,239,0.1)_0%,transparent_70%)]" />
+          <div className="absolute bottom-20 right-10 w-96 h-96 rounded-full bg-[radial-gradient(circle,rgba(0,255,156,0.1)_0%,transparent_70%)]" />
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:64px_64px]" />
         </div>
 
@@ -160,11 +160,13 @@ export default function HomeClient() {
               transition={{ duration: 0.8, delay: 0.3 }}
               className="relative"
             >
-              <div className="relative rounded-2xl overflow-hidden border border-white/10">
+              <div className="relative aspect-[4/3] rounded-2xl overflow-hidden border border-white/10">
                 <ImageWithFallback
                   src="https://images.unsplash.com/photo-1618385455730-2571c38966b7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxCSU0lMjBidWlsZGluZyUyMG1vZGVsJTIwYXJjaGl0ZWN0dXJlfGVufDF8fHx8MTc3NTQ1ODU1NXww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
                   alt="BIM Building Model"
-                  className="w-full h-full object-cover"
+                  className="absolute inset-0 w-full h-full object-cover"
+                  priority
+                  sizes="(max-width: 1024px) 100vw, 50vw"
                 />
               </div>
             </motion.div>
@@ -194,14 +196,20 @@ export default function HomeClient() {
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {whyBIM.map((item, index) => (
+          <motion.div
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
+          >
+            {whyBIM.map((item) => (
               <motion.div
                 key={item.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
+                variants={{
+                  hidden: { opacity: 0, y: 20 },
+                  visible: { opacity: 1, y: 0 },
+                }}
                 className="relative bg-black/50 border border-white/15 rounded-2xl p-6 hover:bg-black hover:border-white/30 transition-all shadow-lg"
               >
                 <div className="mb-4">
@@ -211,7 +219,7 @@ export default function HomeClient() {
                 <p className="text-gray-400 text-sm">{item.description}</p>
               </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
@@ -235,14 +243,20 @@ export default function HomeClient() {
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {services.map((service, index) => (
+          <motion.div
+            className="grid grid-cols-1 md:grid-cols-2 gap-6"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
+          >
+            {services.map((service) => (
               <motion.div
                 key={service.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
+                variants={{
+                  hidden: { opacity: 0, y: 20 },
+                  visible: { opacity: 1, y: 0 },
+                }}
                 className="group relative bg-black/50 border border-white/15 rounded-2xl p-8 hover:bg-black hover:border-white/30 transition-all duration-300 shadow-lg"
               >
                 <div className="flex items-start space-x-4">
@@ -258,7 +272,7 @@ export default function HomeClient() {
                 </div>
               </motion.div>
             ))}
-          </div>
+          </motion.div>
 
           <div className="text-center mt-12">
             <Link
@@ -288,20 +302,26 @@ export default function HomeClient() {
             </h2>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {industries.map((industry, index) => (
+          <motion.div
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
+          >
+            {industries.map((industry) => (
               <motion.div
                 key={industry}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
+                variants={{
+                  hidden: { opacity: 0, y: 20 },
+                  visible: { opacity: 1, y: 0 },
+                }}
                 className="relative bg-black/50 border border-white/15 rounded-xl p-6 hover:bg-black hover:border-white/30 transition-all text-center shadow-lg"
               >
                 <h3 className="font-semibold text-lg">{industry}</h3>
               </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 

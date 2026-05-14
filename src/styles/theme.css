@@ -241,6 +241,7 @@
     -webkit-text-fill-color: transparent;
     animation: nav-careers-shimmer 1.8s ease-in-out infinite alternate;
     animation-delay: 1.5s;
+    will-change: background-position, filter;
   }
 
   .group:hover .nav-careers-shimmer {

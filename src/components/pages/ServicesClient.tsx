@@ -76,6 +76,8 @@ function ServiceImageBlock({
           src={service.image}
           alt={service.title}
           className="absolute inset-0 w-full h-full object-cover"
+          sizes="(max-width: 1024px) 100vw, 50vw"
+          priority={index === 0}
         />
 
         {/* Desktop: clip-path wipe on hover */}
@@ -83,6 +85,7 @@ function ServiceImageBlock({
           src={service.hoverImage}
           alt={`${service.title} Blueprint`}
           className="absolute inset-0 w-full h-full object-cover z-10 hidden lg:block"
+          sizes="(max-width: 1024px) 100vw, 50vw"
           style={{
             clipPath: isHovered
               ? "inset(0 0% 0 0)"
@@ -104,6 +107,7 @@ function ServiceImageBlock({
             src={service.hoverImage}
             alt={`${service.title} Blueprint`}
             className="absolute inset-0 w-full h-full object-cover"
+            sizes="(max-width: 1024px) 100vw, 50vw"
           />
         </motion.div>
       </div>
@@ -305,8 +309,8 @@ export default function ServicesClient() {
     <div className="overflow-x-hidden">
       <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0">
-          <div className="absolute top-20 left-10 w-96 h-96 bg-[#00AEEF]/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-20 right-10 w-96 h-96 bg-[#00FF9C]/10 rounded-full blur-3xl" />
+          <div className="absolute top-20 left-10 w-96 h-96 rounded-full bg-[radial-gradient(circle,rgba(0,174,239,0.1)_0%,transparent_70%)]" />
+          <div className="absolute bottom-20 right-10 w-96 h-96 rounded-full bg-[radial-gradient(circle,rgba(0,255,156,0.1)_0%,transparent_70%)]" />
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:64px_64px]" />
         </div>
 
@@ -432,14 +436,20 @@ export default function ServicesClient() {
             </p>
           </motion.div>
 
-          <div className="process grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <motion.div
+            className="process grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
+          >
             {process.map((step, index) => (
               <motion.div
                 key={step.number}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
+                variants={{
+                  hidden: { opacity: 0, y: 20 },
+                  visible: { opacity: 1, y: 0 },
+                }}
                 onMouseEnter={() => {
                   if (window.matchMedia("(pointer: fine)").matches) {
                     setHoveredProcess(index);
@@ -505,7 +515,7 @@ export default function ServicesClient() {
                 </AnimatePresence>
               </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
