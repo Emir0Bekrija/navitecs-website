@@ -9,6 +9,4 @@ export const adminEvents: EventEmitter =
 
 adminEvents.setMaxListeners(50); // allow up to 50 concurrent admin tabs
 
-if (process.env.NODE_ENV !== "production") {
-  globalForEvents.__adminEvents = adminEvents;
-}
+globalForEvents.__adminEvents = adminEvents;

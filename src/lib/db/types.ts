@@ -175,9 +175,7 @@ export interface TeamMember {
 export interface PageView {
   id: number;
   path: string;
-  country: string | null;
   referrer: string | null;
-  duration: number | null;
   createdAt: Date;
 }
 

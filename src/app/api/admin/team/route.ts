@@ -3,6 +3,7 @@ import { z } from "zod";
 import * as teamMemberRepo from "@/lib/db/repositories/teamMember";
 import { requireAdmin } from "@/lib/proxy";
 import { invalidate } from "@/lib/cache";
+import { revalidatePath } from "next/cache";
 
 const TeamMemberSchema = z.object({
   name: z.string().min(1).max(255),
@@ -38,5 +39,6 @@ export async function POST(request: NextRequest) {
 
   const member = await teamMemberRepo.create({ ...parsed.data, order: nextOrder });
   invalidate("team:active");
+  revalidatePath("/team");
   return NextResponse.json(member, { status: 201 });
 }

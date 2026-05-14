@@ -29,8 +29,6 @@ type StatsResponse = {
   projectViews: LabelPoint[];
   pageViewsByPath: LabelPoint[];
   trafficByHour: { hour: number; count: number }[];
-  countryBreakdown: LabelPoint[];
-  avgSessionDuration: number | null;
   popupClicks: {
     total: number;
     byDay: DayPoint[];
@@ -144,36 +142,11 @@ function Skeleton({ className }: { className?: string }) {
   return <div className={`bg-[#0a0a0a] border border-white/10 rounded-2xl animate-pulse ${className}`} />;
 }
 
-function formatDuration(seconds: number): string {
-  if (seconds < 60) return `${seconds}s`;
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return s > 0 ? `${m}m ${s}s` : `${m}m`;
-}
-
 function formatHour(h: number): string {
   if (h === 0) return "12am";
   if (h < 12) return `${h}am`;
   if (h === 12) return "12pm";
   return `${h - 12}pm`;
-}
-
-// ── Country code → name ───────────────────────────────────────────────────────
-
-const COUNTRY_NAMES: Record<string, string> = {
-  US: "United States", GB: "United Kingdom", DE: "Germany", FR: "France",
-  BA: "Bosnia & Herz.", RS: "Serbia", HR: "Croatia", SI: "Slovenia",
-  AT: "Austria", CH: "Switzerland", NL: "Netherlands", SE: "Sweden",
-  NO: "Norway", DK: "Denmark", FI: "Finland", PL: "Poland",
-  CZ: "Czech Republic", SK: "Slovakia", HU: "Hungary", RO: "Romania",
-  BG: "Bulgaria", TR: "Turkey", IT: "Italy", ES: "Spain", PT: "Portugal",
-  IE: "Ireland", BE: "Belgium", CA: "Canada", AU: "Australia", NZ: "New Zealand",
-  IN: "India", JP: "Japan", CN: "China", KR: "South Korea", BR: "Brazil",
-  MX: "Mexico", AR: "Argentina",
-};
-
-function countryName(code: string): string {
-  return COUNTRY_NAMES[code] ?? code;
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
@@ -278,15 +251,6 @@ export default function StatisticsClient() {
               <div className="text-xs text-gray-600 mt-0.5">in period</div>
             </div>
           ))}
-          {stats.avgSessionDuration != null && (
-            <div className="bg-[#0a0a0a] border border-white/10 rounded-2xl p-4">
-              <div className="text-2xl font-bold mb-0.5 text-[#00FF9C]">
-                {formatDuration(stats.avgSessionDuration)}
-              </div>
-              <div className="text-xs text-gray-400">Avg. Session Duration</div>
-              <div className="text-xs text-gray-600 mt-0.5">in period</div>
-            </div>
-          )}
         </div>
       ) : null}
 
@@ -414,41 +378,26 @@ export default function StatisticsClient() {
         </div>
       ) : null}
 
-      {/* Country + Page Views by path */}
+      {/* Page Views by path */}
       {loading && !stats ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Skeleton className="h-64" />
-          <Skeleton className="h-64" />
-        </div>
+        <Skeleton className="h-64" />
       ) : stats ? (
-        <div className={`grid grid-cols-1 lg:grid-cols-2 gap-6 ${dim}`}>
-          <div className="bg-[#0a0a0a] border border-white/10 rounded-2xl p-6">
-            <h3 className="font-semibold mb-1">Visitors by Country</h3>
-            <p className="text-xs text-gray-500 mb-5">Detected from visitor IP address</p>
-            <Breakdown
-              data={stats.countryBreakdown}
-              color="#00AEEF"
-              emptyText="No country data yet — requires server-side IP detection"
-              formatLabel={countryName}
-            />
-          </div>
-          <div className="bg-[#0a0a0a] border border-white/10 rounded-2xl p-6">
-            <h3 className="font-semibold mb-1">Page Views by Path</h3>
-            <p className="text-xs text-gray-500 mb-5">All pages in selected period</p>
-            <Breakdown
-              data={stats.pageViewsByPath}
-              color="#f59e0b"
-              emptyText="No page views recorded yet"
-              formatLabel={(path) => {
-                const map: Record<string, string> = {
-                  "/home": "Home", "/about": "About", "/services": "Services",
-                  "/projects": "Projects", "/careers": "Careers", "/contact": "Contact",
-                };
-                const fallback = path.replace(/^\//, "").replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) || "Home";
-                return map[path] ?? fallback;
-              }}
-            />
-          </div>
+        <div className={`bg-[#0a0a0a] border border-white/10 rounded-2xl p-6 ${dim}`}>
+          <h3 className="font-semibold mb-1">Page Views by Path</h3>
+          <p className="text-xs text-gray-500 mb-5">All pages in selected period</p>
+          <Breakdown
+            data={stats.pageViewsByPath}
+            color="#f59e0b"
+            emptyText="No page views recorded yet"
+            formatLabel={(path) => {
+              const map: Record<string, string> = {
+                "/home": "Home", "/about": "About", "/services": "Services",
+                "/projects": "Projects", "/careers": "Careers", "/contact": "Contact",
+              };
+              const fallback = path.replace(/^\//, "").replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) || "Home";
+              return map[path] ?? fallback;
+            }}
+          />
         </div>
       ) : null}
 

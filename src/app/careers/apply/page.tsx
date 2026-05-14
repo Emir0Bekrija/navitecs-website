@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import * as jobRepo from "@/lib/db/repositories/job";
 import ApplyClient from "../../../components/pages/ApplyClient";
 import { BASE_URL } from "@/lib/baseUrl";
-
-export const dynamic = "force-dynamic";
+import { cached } from "@/lib/cache";
 
 export const metadata: Metadata = {
   title: "Apply Now",
@@ -33,7 +32,9 @@ export default async function Page({ searchParams }: Props) {
 
   let jobDetails: JobDetails | null = null;
   if (jobId) {
-    const job = await jobRepo.findUnique(jobId, ["title", "summary", "department", "location", "type", "description", "requirements"]);
+    const job = await cached(`jobs:detail:${jobId}`, () =>
+      jobRepo.findUnique(jobId, ["title", "summary", "department", "location", "type", "description", "requirements"]),
+    );
     if (job) jobDetails = { ...job, requirements: (job.requirements as string[]) ?? [] };
   }
 

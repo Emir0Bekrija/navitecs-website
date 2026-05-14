@@ -27,5 +27,6 @@ export async function POST(request: NextRequest) {
 
   invalidatePrefix("jobs");
   revalidatePath("/careers");
+  revalidatePath("/careers/apply");
   return NextResponse.json({ ok: true });
 }

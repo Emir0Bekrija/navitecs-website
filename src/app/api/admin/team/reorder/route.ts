@@ -3,6 +3,7 @@ import { z } from "zod";
 import * as teamMemberRepo from "@/lib/db/repositories/teamMember";
 import { requireAdmin } from "@/lib/proxy";
 import { invalidate } from "@/lib/cache";
+import { revalidatePath } from "next/cache";
 
 const ReorderSchema = z.object({
   ids: z.array(z.string()).min(1),
@@ -24,5 +25,6 @@ export async function POST(request: NextRequest) {
   await teamMemberRepo.reorder(ids);
 
   invalidate("team:active");
+  revalidatePath("/team");
   return NextResponse.json({ ok: true });
 }

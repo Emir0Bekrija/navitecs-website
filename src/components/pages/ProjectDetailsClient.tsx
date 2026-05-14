@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { usePageView } from "@/hooks/usePageView";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -32,19 +32,33 @@ type Props = { project: Project };
 // ── Lightbox ──────────────────────────────────────────────────────────────────
 
 type LightboxImage = { src: string; caption?: string };
-type LightboxState = { images: LightboxImage[]; index: number };
-type OpenLightbox = (images: LightboxImage[], index?: number) => void;
+type SourceRect = { top: number; left: number; width: number; height: number };
+type LightboxState = {
+  images: LightboxImage[];
+  index: number;
+  sourceRect: SourceRect | null;
+};
+type OpenLightbox = (
+  images: LightboxImage[],
+  index?: number,
+  sourceRect?: SourceRect | null,
+) => void;
 
 const ZOOM_STEP = 0.25;
-const ZOOM_MIN  = 1;
+const ZOOM_MIN = 1;
 
 // Largest size that fits inside availW × availH while keeping aspect ratio (object-contain logic)
 function computeFit(nw: number, nh: number, availW: number, availH: number) {
   if (nw / nh > availW / availH) {
-    return { w: availW, h: Math.round(availW * nh / nw) };
+    return { w: availW, h: Math.round((availW * nh) / nw) };
   }
-  return { w: Math.round(availH * nw / nh), h: availH };
+  return { w: Math.round((availH * nw) / nh), h: availH };
 }
+
+type AnimPhase = "entering" | "settled";
+
+const FLIP_DURATION = 0.35;
+const FLIP_EASE: [number, number, number, number] = [0.32, 0.72, 0, 1];
 
 function LightboxModal({
   state,
@@ -53,177 +67,317 @@ function LightboxModal({
   state: LightboxState;
   onClose: () => void;
 }) {
-  const [index, setIndex]     = useState(state.index);
-  const [scale, setScale]     = useState(1);
+  const [index, setIndex] = useState(state.index);
+  const [scale, setScale] = useState(1);
   const [zoomMax, setZoomMax] = useState(5);
   const [fitSize, setFitSize] = useState<{ w: number; h: number } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const count   = state.images.length;
+  // FLIP animation state
+  const [animPhase, setAnimPhase] = useState<AnimPhase>("entering");
+  const [sourceRect, setSourceRect] = useState<SourceRect | null>(
+    state.sourceRect,
+  );
+  const [targetRect, setTargetRect] = useState<{
+    top: number;
+    left: number;
+    width: number;
+    height: number;
+  } | null>(null);
+
+  const count = state.images.length;
   const current = state.images[index];
 
   // Available area for the image itself — full screen minus the controls strip at bottom
-  const CTRL_H  = 52; // px reserved for zoom controls + caption
-  const availW  = () => window.innerWidth;
-  const availH  = () => window.innerHeight - CTRL_H;
+  const CTRL_H = 52; // px reserved for zoom controls + caption
+  const availW = () => window.innerWidth;
+  const availH = () => window.innerHeight - CTRL_H;
+
+  function computeTarget(nw: number, nh: number) {
+    const fit = computeFit(nw, nh, availW(), availH());
+    const left = (window.innerWidth - fit.w) / 2;
+    const top = (availH() - fit.h) / 2;
+    return { top, left, width: fit.w, height: fit.h };
+  }
 
   function handleLoad(e: React.SyntheticEvent<HTMLImageElement>) {
     const img = e.currentTarget;
-    const fit = computeFit(img.naturalWidth, img.naturalHeight, availW(), availH());
+    const fit = computeFit(
+      img.naturalWidth,
+      img.naturalHeight,
+      availW(),
+      availH(),
+    );
     setFitSize(fit);
+    setTargetRect(computeTarget(img.naturalWidth, img.naturalHeight));
     // Max zoom: whichever axis fills the full screen first
     const maxToFillScreen = Math.max(availW() / fit.w, availH() / fit.h);
     setZoomMax(Math.max(Math.ceil(maxToFillScreen / ZOOM_STEP) * ZOOM_STEP, 2));
   }
 
-  function resetImage() { setFitSize(null); setScale(1); }
+  function resetImage() {
+    setFitSize(null);
+    setScale(1);
+    setTargetRect(null);
+  }
 
-  const prev    = useCallback(() => { setIndex((i) => Math.max(0, i - 1));            resetImage(); }, []);
-  const next    = useCallback(() => { setIndex((i) => Math.min(count - 1, i + 1));    resetImage(); }, [count]);
-  const zoomIn  = useCallback(() => setScale((s) => Math.min(zoomMax,  +(s + ZOOM_STEP).toFixed(2))), [zoomMax]);
-  const zoomOut = useCallback(() => setScale((s) => Math.max(ZOOM_MIN, +(s - ZOOM_STEP).toFixed(2))), []);
+  const prev = useCallback(() => {
+    setSourceRect(null); // no FLIP target after nav
+    setIndex((i) => Math.max(0, i - 1));
+    resetImage();
+  }, []);
+  const next = useCallback(() => {
+    setSourceRect(null);
+    setIndex((i) => Math.min(count - 1, i + 1));
+    resetImage();
+  }, [count]);
+  const zoomIn = useCallback(
+    () => setScale((s) => Math.min(zoomMax, +(s + ZOOM_STEP).toFixed(2))),
+    [zoomMax],
+  );
+  const zoomOut = useCallback(
+    () => setScale((s) => Math.max(ZOOM_MIN, +(s - ZOOM_STEP).toFixed(2))),
+    [],
+  );
+
+  const handleClose = useCallback(() => {
+    if (animPhase !== "settled") return;
+    onClose();
+  }, [animPhase, onClose]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape")             onClose();
-      if (e.key === "ArrowLeft")          prev();
-      if (e.key === "ArrowRight")         next();
+      if (e.key === "Escape") handleClose();
+      if (e.key === "ArrowLeft") prev();
+      if (e.key === "ArrowRight") next();
       if (e.key === "+" || e.key === "=") zoomIn();
-      if (e.key === "-")                  zoomOut();
+      if (e.key === "-") zoomOut();
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose, prev, next, zoomIn, zoomOut]);
+  }, [handleClose, prev, next, zoomIn, zoomOut]);
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = ""; };
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, []);
+
+  // If no sourceRect, skip straight to settled
+  useEffect(() => {
+    if (!sourceRect && animPhase === "entering") {
+      setAnimPhase("settled");
+    }
+  }, [sourceRect, animPhase]);
 
   const displayW = fitSize ? Math.round(fitSize.w * scale) : undefined;
   const displayH = fitSize ? Math.round(fitSize.h * scale) : undefined;
 
   // After each zoom, re-center the scroll position
   useEffect(() => {
+    if (animPhase !== "settled") return;
     const el = scrollRef.current;
     if (!el) return;
     el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
-    el.scrollTop  = (el.scrollHeight - el.clientHeight) / 2;
-  }, [displayW, displayH]);
+    el.scrollTop = (el.scrollHeight - el.clientHeight) / 2;
+  }, [displayW, displayH, animPhase]);
+
+  const isSettled = animPhase === "settled";
+
+  // Compute FLIP enter animation props
+  const flipInitial = sourceRect
+    ? {
+        top: sourceRect.top,
+        left: sourceRect.left,
+        width: sourceRect.width,
+        height: sourceRect.height,
+        borderRadius: 16,
+      }
+    : { opacity: 0 };
+
+  const flipAnimate = targetRect
+    ? {
+        top: targetRect.top,
+        left: targetRect.left,
+        width: targetRect.width,
+        height: targetRect.height,
+        borderRadius: 0,
+        opacity: 1,
+      }
+    : sourceRect
+      ? {
+          top: sourceRect.top,
+          left: sourceRect.left,
+          width: sourceRect.width,
+          height: sourceRect.height,
+          opacity: 1,
+        }
+      : { opacity: 1 };
 
   return (
-    <div
-      className="fixed inset-0 z-[100] flex flex-col bg-black"
-      onClick={onClose}
-    >
-      {/* Close */}
-      <button
-        className="absolute top-4 right-4 z-20 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
-        onClick={onClose}
-      >
-        <X size={22} />
-      </button>
+    <>
+      {/* Backdrop */}
+      <motion.div
+        className="fixed inset-0 z-[100] bg-black"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.2 }}
+        onClick={handleClose}
+      />
 
-      {/* Prev */}
-      {count > 1 && (
-        <button
-          className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors disabled:opacity-20"
-          disabled={index === 0}
-          onClick={(e) => { e.stopPropagation(); prev(); }}
-        >
-          <ChevronLeft size={24} />
-        </button>
+      {/* FLIP image overlay — visible only during entering phase */}
+      {animPhase === "entering" && (
+        <motion.img
+          key={`flip-${current.src}`}
+          src={current.src}
+          alt={current.caption ?? ""}
+          onLoad={handleLoad}
+          draggable={false}
+          className="fixed z-[102] object-contain"
+          initial={flipInitial}
+          animate={flipAnimate}
+          transition={{
+            type: "tween",
+            duration: FLIP_DURATION,
+            ease: FLIP_EASE,
+          }}
+          onAnimationComplete={() => {
+            if (animPhase === "entering") setAnimPhase("settled");
+          }}
+          style={{ pointerEvents: "none" }}
+        />
       )}
 
-      {/* Scrollable image viewport — fills all space above the controls bar */}
-      <div
-        ref={scrollRef}
-        style={{
-          flex: 1,
-          overflow: "auto",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-        onClick={(e) => e.stopPropagation()}
+      {/* Main lightbox UI — visible when settled */}
+      <motion.div
+        className="fixed inset-0 z-[101] flex flex-col"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: isSettled ? 1 : 0 }}
+        transition={{ duration: 0.15 }}
+        style={{ pointerEvents: isSettled ? "auto" : "none" }}
       >
-        {/* Inner div expands to the image size when zoomed, giving the scroll container real content */}
+        {/* Close */}
+        <button
+          className="absolute top-4 right-4 z-20 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+          onClick={handleClose}
+        >
+          <X size={22} />
+        </button>
+
+        {/* Prev */}
+        {count > 1 && (
+          <button
+            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors disabled:opacity-20"
+            disabled={index === 0}
+            onClick={(e) => {
+              e.stopPropagation();
+              prev();
+            }}
+          >
+            <ChevronLeft size={24} />
+          </button>
+        )}
+
+        {/* Scrollable image viewport — fills all space above the controls bar */}
         <div
+          ref={scrollRef}
           style={{
+            flex: 1,
+            overflow: "auto",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            minWidth:  "100%",
-            minHeight: "100%",
-            width:     displayW,
-            height:    displayH,
           }}
+          onClick={handleClose}
         >
-          <img
-            key={current.src}
-            src={current.src}
-            alt={current.caption ?? ""}
-            onLoad={handleLoad}
-            draggable={false}
-            style={{
-              width:     displayW,
-              height:    displayH,
-              // Before natural dims are known, let CSS constrain it naturally
-              maxWidth:  fitSize ? undefined : "100vw",
-              maxHeight: fitSize ? undefined : `calc(100vh - ${CTRL_H}px)`,
-              objectFit: fitSize ? undefined : "contain",
-              transition: "width 0.15s ease, height 0.15s ease",
-              flexShrink: 0,
-              display: "block",
-            }}
-          />
+          <div onClick={(e) => e.stopPropagation()}>
+            {/* Inner div expands to the image size when zoomed, giving the scroll container real content */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                minWidth: "100%",
+                minHeight: "100%",
+                width: displayW,
+                height: displayH,
+              }}
+            >
+              <img
+                key={current.src}
+                src={current.src}
+                alt={current.caption ?? ""}
+                onLoad={handleLoad}
+                draggable={false}
+                style={{
+                  width: displayW,
+                  height: displayH,
+                  // Before natural dims are known, let CSS constrain it naturally
+                  maxWidth: fitSize ? undefined : "100vw",
+                  maxHeight: fitSize ? undefined : `calc(100vh - ${CTRL_H}px)`,
+                  objectFit: fitSize ? undefined : "contain",
+                  transition: "width 0.15s ease, height 0.15s ease",
+                  flexShrink: 0,
+                  display: "block",
+                }}
+              />
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Controls bar — pinned to bottom */}
-      <div
-        className="flex items-center justify-center gap-3 py-3 border-t border-white/5"
-        style={{ height: CTRL_H }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button
-          onClick={zoomOut}
-          disabled={scale <= ZOOM_MIN}
-          className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors disabled:opacity-30"
-          title="Zoom out (−)"
+        {/* Controls bar — pinned to bottom */}
+        <div
+          className="flex items-center justify-center gap-3 py-3 border-t border-white/5"
+          style={{ height: CTRL_H }}
+          onClick={(e) => e.stopPropagation()}
         >
-          <ZoomOut size={18} />
-        </button>
-        <span className="text-xs text-gray-400 w-12 text-center tabular-nums select-none">
-          {Math.round(scale * 100)}%
-        </span>
-        <button
-          onClick={zoomIn}
-          disabled={scale >= zoomMax}
-          className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors disabled:opacity-30"
-          title="Zoom in (+)"
-        >
-          <ZoomIn size={18} />
-        </button>
-        {current.caption && (
-          <span className="text-sm text-gray-500 ml-4">{current.caption}</span>
-        )}
+          <button
+            onClick={zoomOut}
+            disabled={scale <= ZOOM_MIN}
+            className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors disabled:opacity-30"
+            title="Zoom out (−)"
+          >
+            <ZoomOut size={18} />
+          </button>
+          <span className="text-xs text-gray-400 w-12 text-center tabular-nums select-none">
+            {Math.round(scale * 100)}%
+          </span>
+          <button
+            onClick={zoomIn}
+            disabled={scale >= zoomMax}
+            className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors disabled:opacity-30"
+            title="Zoom in (+)"
+          >
+            <ZoomIn size={18} />
+          </button>
+          {current.caption && (
+            <span className="text-sm text-gray-500 ml-4">
+              {current.caption}
+            </span>
+          )}
+          {count > 1 && (
+            <span className="text-xs text-gray-600 ml-2 tabular-nums select-none">
+              {index + 1} / {count}
+            </span>
+          )}
+        </div>
+
+        {/* Next */}
         {count > 1 && (
-          <span className="text-xs text-gray-600 ml-2 tabular-nums select-none">{index + 1} / {count}</span>
+          <button
+            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors disabled:opacity-20"
+            disabled={index === count - 1}
+            onClick={(e) => {
+              e.stopPropagation();
+              next();
+            }}
+          >
+            <ChevronRight size={24} />
+          </button>
         )}
-      </div>
-
-      {/* Next */}
-      {count > 1 && (
-        <button
-          className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors disabled:opacity-20"
-          disabled={index === count - 1}
-          onClick={(e) => { e.stopPropagation(); next(); }}
-        >
-          <ChevronRight size={24} />
-        </button>
-      )}
-    </div>
+      </motion.div>
+    </>
   );
 }
 
@@ -374,15 +528,25 @@ function GallerySlideshow({
       {/* Image */}
       <div
         className="relative group rounded-2xl overflow-hidden border border-white/10 bg-black aspect-[4/3] flex items-center justify-center"
-        onClick={() => openLightbox(lbImages, current)}
+        onClick={(e) => {
+          const rect = e.currentTarget.getBoundingClientRect();
+          openLightbox(lbImages, current, {
+            top: rect.top,
+            left: rect.left,
+            width: rect.width,
+            height: rect.height,
+          });
+        }}
       >
         <ImageWithFallback
           src={images[current].url}
           alt={images[current].caption ?? `Image ${current + 1}`}
           className="w-full h-full object-contain transition-[filter] duration-200 group-hover:brightness-75"
         />
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-          <span className="px-4 py-2 bg-gray-800/80 rounded-lg text-sm text-gray-100 font-medium">Open image</span>
+        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+          <span className="px-3 py-1.5 bg-black/60 backdrop-blur-sm border border-white/15 rounded-lg text-xs text-gray-100 font-medium">
+            Open image
+          </span>
         </div>
         {count > 1 && (
           <>
@@ -443,7 +607,15 @@ function GallerySlideshow({
 
 // ── BIM embed with fullscreen ─────────────────────────────────────────────────
 
-function BimEmbed({ url, title, height }: { url: string; title: string; height: number }) {
+function BimEmbed({
+  url,
+  title,
+  height,
+}: {
+  url: string;
+  title: string;
+  height: number;
+}) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -521,22 +693,34 @@ function BlockRenderer({
         <figure className="space-y-3">
           <div
             className="relative group rounded-2xl overflow-hidden border border-white/10 bg-black aspect-[4/3] flex items-center justify-center"
-            onClick={() =>
-              openLightbox([
+            onClick={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              openLightbox(
+                [
+                  {
+                    src: url,
+                    caption: d.caption ? String(d.caption) : undefined,
+                  },
+                ],
+                0,
                 {
-                  src: url,
-                  caption: d.caption ? String(d.caption) : undefined,
+                  top: rect.top,
+                  left: rect.left,
+                  width: rect.width,
+                  height: rect.height,
                 },
-              ])
-            }
+              );
+            }}
           >
             <ImageWithFallback
               src={url}
               alt={String(d.alt ?? d.caption ?? "Project image")}
               className="w-full h-full object-contain transition-[filter] duration-200 group-hover:brightness-75"
             />
-            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-              <span className="px-4 py-2 bg-gray-800/80 rounded-lg text-sm text-gray-100 font-medium">Open image</span>
+            <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+              <span className="px-3 py-1.5 bg-black/60 backdrop-blur-sm border border-white/15 rounded-lg text-xs text-gray-100 font-medium">
+                Open image
+              </span>
             </div>
           </div>
           {!!d.caption && (
@@ -704,20 +888,29 @@ function BlockRenderer({
               <figure className="space-y-2">
                 <div
                   className="relative group rounded-xl overflow-hidden border border-white/10 aspect-[4/3] bg-black flex items-center justify-center"
-                  onClick={() =>
+                  onClick={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
                     openLightbox(
                       [{ src: before }, ...(after ? [{ src: after }] : [])],
                       0,
-                    )
-                  }
+                      {
+                        top: rect.top,
+                        left: rect.left,
+                        width: rect.width,
+                        height: rect.height,
+                      },
+                    );
+                  }}
                 >
                   <ImageWithFallback
                     src={before}
                     alt="Before"
                     className="w-full h-full object-contain transition-[filter] duration-200 group-hover:brightness-75"
                   />
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-                    <span className="px-4 py-2 bg-gray-800/80 rounded-lg text-sm text-gray-100 font-medium">Open image</span>
+                  <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+                    <span className="px-3 py-1.5 bg-black/60 backdrop-blur-sm border border-white/15 rounded-lg text-xs text-gray-100 font-medium">
+                      Open image
+                    </span>
                   </div>
                 </div>
                 <p className="text-center text-sm font-medium text-gray-400">
@@ -729,20 +922,29 @@ function BlockRenderer({
               <figure className="space-y-2">
                 <div
                   className="relative group rounded-xl overflow-hidden border border-[#00FF9C]/20 aspect-[4/3] bg-black flex items-center justify-center"
-                  onClick={() =>
+                  onClick={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
                     openLightbox(
                       [...(before ? [{ src: before }] : []), { src: after }],
                       before ? 1 : 0,
-                    )
-                  }
+                      {
+                        top: rect.top,
+                        left: rect.left,
+                        width: rect.width,
+                        height: rect.height,
+                      },
+                    );
+                  }}
                 >
                   <ImageWithFallback
                     src={after}
                     alt="After"
                     className="w-full h-full object-contain transition-[filter] duration-200 group-hover:brightness-75"
                   />
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-                    <span className="px-4 py-2 bg-gray-800/80 rounded-lg text-sm text-gray-100 font-medium">Open image</span>
+                  <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+                    <span className="px-3 py-1.5 bg-black/60 backdrop-blur-sm border border-white/15 rounded-lg text-xs text-gray-100 font-medium">
+                      Open image
+                    </span>
                   </div>
                 </div>
                 <p className="text-center text-sm font-medium text-[#00FF9C]">
@@ -793,9 +995,12 @@ export default function ProjectDetailsClient({ project }: Props) {
   );
 
   const [lightbox, setLightbox] = useState<LightboxState | null>(null);
-  const openLightbox: OpenLightbox = useCallback((images, index = 0) => {
-    setLightbox({ images, index });
-  }, []);
+  const openLightbox: OpenLightbox = useCallback(
+    (images, index = 0, sourceRect = null) => {
+      setLightbox({ images, index, sourceRect });
+    },
+    [],
+  );
 
   return (
     <div className="overflow-x-hidden pb-24">
@@ -878,19 +1083,9 @@ export default function ProjectDetailsClient({ project }: Props) {
       </section>
 
       {/* Lightbox */}
-      <AnimatePresence>
-        {lightbox && (
-          <motion.div
-            key="lightbox"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-          >
-            <LightboxModal state={lightbox} onClose={() => setLightbox(null)} />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {lightbox && (
+        <LightboxModal state={lightbox} onClose={() => setLightbox(null)} />
+      )}
 
       {/* CTA footer */}
       <section className="py-24 mt-12 bg-white/5">

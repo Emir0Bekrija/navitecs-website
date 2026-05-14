@@ -3,6 +3,7 @@ import { z } from "zod";
 import * as teamMemberRepo from "@/lib/db/repositories/teamMember";
 import { requireAdmin } from "@/lib/proxy";
 import { invalidate } from "@/lib/cache";
+import { revalidatePath } from "next/cache";
 import fs from "fs/promises";
 import path from "path";
 
@@ -62,6 +63,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
     }
 
     invalidate("team:active");
+    revalidatePath("/team");
     return NextResponse.json(member);
   } catch {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -87,5 +89,6 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   }
 
   invalidate("team:active");
+  revalidatePath("/team");
   return NextResponse.json({ ok: true });
 }

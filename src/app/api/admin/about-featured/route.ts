@@ -3,6 +3,7 @@ import { z } from "zod";
 import * as aboutTeamFeatureRepo from "@/lib/db/repositories/aboutTeamFeature";
 import { requireAdmin } from "@/lib/proxy";
 import { invalidate } from "@/lib/cache";
+import { revalidatePath } from "next/cache";
 import fs from "fs/promises";
 import path from "path";
 
@@ -56,5 +57,6 @@ export async function PUT(request: NextRequest) {
   }
 
   invalidate("about:teamFeature");
+  revalidatePath("/about");
   return NextResponse.json(record);
 }

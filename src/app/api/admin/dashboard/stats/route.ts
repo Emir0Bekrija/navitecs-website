@@ -74,12 +74,11 @@ export async function GET(request: NextRequest) {
   try {
     const dateWhere = { gte: from, lte: to };
 
-    const [applications, contacts, pageViews, popupClicks, avgDuration] = await Promise.all([
+    const [applications, contacts, pageViews, popupClicks] = await Promise.all([
       applicationRepo.findManyWithJob({ submittedAt: dateWhere }),
       contactRepo.findMany({ where: { submittedAt: dateWhere } }),
       pageViewRepo.findMany({ createdAt: dateWhere }),
       popupClickRepo.findMany({ createdAt: dateWhere }),
-      pageViewRepo.aggregateAvgDuration({ createdAt: dateWhere }),
     ]);
 
     const applicationsByDay = groupByDay(applications.map((a) => a.submittedAt));
@@ -110,23 +109,12 @@ export async function GET(request: NextRequest) {
     // Traffic by hour (0–23)
     const trafficByHour = groupByHour(pageViews.map((p) => p.createdAt));
 
-    // Country breakdown
-    const countryBreakdown = groupByField(
-      pageViews.map((p) => p.country),
-      20
-    );
-
     // Popup clicks
     const popupClicksByDay = groupByDay(popupClicks.map((c) => c.createdAt));
     const popupClicksByTitle = groupByField(
       popupClicks.map((c) => c.linkTitle ?? c.linkUrl),
       10
     );
-
-    // Average session duration (seconds)
-    const avgSessionDuration = avgDuration
-      ? Math.round(avgDuration)
-      : null;
 
     return NextResponse.json({
       totals: {
@@ -141,8 +129,6 @@ export async function GET(request: NextRequest) {
       projectViews,
       pageViewsByPath,
       trafficByHour,
-      countryBreakdown,
-      avgSessionDuration,
       popupClicks: {
         total: popupClicks.length,
         byDay: popupClicksByDay,

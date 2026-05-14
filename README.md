@@ -168,7 +168,7 @@ navitecs.next.js/
 │   │   ├── blocks.ts          # Content block factory (11 types)
 │   │   ├── consent.ts         # localStorage consent read/write
 │   │   ├── analytics.ts       # GA4 init, Consent Mode v2
-│   │   ├── cvValidation.ts    # PDF upload validation + ClamAV + Ghostscript
+│   │   ├── cvValidation.ts    # PDF upload validation
 │   │   ├── imageValidation.ts # Image upload validation + resizing
 │   │   ├── rateLimit.ts       # In-memory rate limiter
 │   │   ├── popup.ts           # Popup config helpers
@@ -321,7 +321,7 @@ Accepts a `multipart/form-data` request.
 | `consentFutureUse` | `"true"` \| `"false"` | Yes | GDPR consent for future use |
 | `cv` | File | No | PDF, max 5 MB |
 
-**CV security pipeline:** size check → extension check → MIME check → magic bytes → ClamAV scan (if installed) → Ghostscript sanitization. Stored with a UUID filename in `uploads/cvs/`.
+**CV security pipeline:** size check → extension check → MIME check → magic bytes. Stored with a UUID filename in `uploads/cvs/`.
 
 **Applicant deduplication:** The server upserts an `Applicant` record keyed by email. All applications from the same email are linked to the same Applicant, enabling cross-application tracking.
 
@@ -1312,8 +1312,6 @@ Uploaded CVs pass through a 5-layer security pipeline before being written to di
 3. **Double-extension attack prevention** — rejects filenames like `malware.exe.pdf`.
 4. **MIME type check** — `Content-Type` header must be `application/pdf`.
 5. **Magic bytes check** — first 4 bytes must be `25 50 44 46` (`%PDF`). This is authoritative — the browser MIME type can be spoofed.
-
-If **ClamAV** is installed on the server (`clamscan` in PATH), the file is virus-scanned after writing. If **Ghostscript** is installed (`gs` in PATH), the PDF is sanitized: JavaScript stripped, AcroForms removed, re-rendered to PDF 1.4.
 
 **Storage:** Files are saved to `uploads/cvs/<uuid>.pdf`. This directory is **not** under `public/` and has no direct URL. The original filename is stored in `cvFileName` for display. The disk filename is always a UUID to prevent path traversal attacks.
 

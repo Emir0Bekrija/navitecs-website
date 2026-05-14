@@ -23,9 +23,15 @@ export const metadata: Metadata = {
 };
 
 export default async function Page() {
-  const aboutFeature = (await cached("about:teamFeature", () =>
-    aboutTeamFeatureRepo.findFirst({ enabled: true }),
-  )) as AboutTeamFeature | null;
+  let aboutFeature: AboutTeamFeature | null = null;
+
+  try {
+    aboutFeature = (await cached("about:teamFeature", () =>
+      aboutTeamFeatureRepo.findFirst({ enabled: true }),
+    )) as AboutTeamFeature | null;
+  } catch {
+    // DB may be unavailable during build — page will regenerate on first request
+  }
 
   return <AboutClient aboutFeature={aboutFeature} />;
 }

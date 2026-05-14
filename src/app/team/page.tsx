@@ -22,9 +22,16 @@ export const metadata: Metadata = {
 };
 
 export default async function TeamPage() {
-  const rows = await cached("team:active", () =>
-    teamMemberRepo.findMany({ active: true }, { field: "order", dir: "ASC" }),
-  );
+  let rows: Awaited<ReturnType<typeof teamMemberRepo.findMany>> = [];
+
+  try {
+    rows = await cached("team:active", () =>
+      teamMemberRepo.findMany({ active: true }, { field: "order", dir: "ASC" }),
+    );
+  } catch {
+    // DB may be unavailable during build — page will regenerate on first request
+  }
+
   const members = rows.map((m) => ({
     ...m,
     createdAt: m.createdAt.toISOString(),

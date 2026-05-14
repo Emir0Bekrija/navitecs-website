@@ -13,7 +13,6 @@ import {
   BarChart2,
   Eye,
   MousePointerClick,
-  Clock,
 } from "lucide-react";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -31,7 +30,6 @@ type QuickStats = {
   pageViewsThisWeek: number;
   popupClicksTotal: number;
   popupClicksToday: number;
-  avgSessionDuration: number | null;
 };
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
@@ -40,13 +38,6 @@ function Skeleton({ className }: { className?: string }) {
   return (
     <div className={`bg-[#0a0a0a] border border-white/10 rounded-2xl animate-pulse ${className}`} />
   );
-}
-
-function formatDuration(seconds: number): string {
-  if (seconds < 60) return `${seconds}s`;
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return s > 0 ? `${m}m ${s}s` : `${m}m`;
 }
 
 // ── Main component ─────────────────────────────────────────────────────────────
@@ -156,19 +147,6 @@ export default function DashboardClient() {
               <div className="text-xs text-gray-600 mt-0.5">last 7 days</div>
             </div>
 
-            {/* Avg Session */}
-            <div className="bg-[#0a0a0a] border border-white/10 rounded-2xl p-5">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-[#00FF9C]/10">
-                  <Clock size={16} className="text-[#00FF9C]" />
-                </div>
-                <span className="text-xs text-gray-500">Avg. Session</span>
-              </div>
-              <div className="text-2xl font-bold text-[#00FF9C]">
-                {quick.avgSessionDuration ? formatDuration(quick.avgSessionDuration) : "—"}
-              </div>
-              <div className="text-xs text-gray-600 mt-0.5">last 7 days</div>
-            </div>
           </div>
         )}
 

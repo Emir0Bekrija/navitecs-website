@@ -1,9 +1,5 @@
 import "server-only";
 import crypto from "crypto";
-import { execFile } from "child_process";
-import { promisify } from "util";
-
-const execFileAsync = promisify(execFile);
 
 // PDF magic bytes — first 5 bytes must be "%PDF-"
 const PDF_MAGIC = Buffer.from("%PDF-", "ascii");
@@ -62,75 +58,3 @@ export function generateSafeCvFilename(): string {
   return `${crypto.randomUUID()}.pdf`;
 }
 
-/**
- * Scan a file with ClamAV (tries clamdscan first, then clamscan).
- * Returns:
- *   { clean: true }              — file is clean
- *   { clean: false, threat }     — malware detected (file should be deleted)
- *   null                         — ClamAV not installed (caller should log and proceed)
- */
-export async function scanWithClamAV(
-  filePath: string,
-): Promise<{ clean: boolean; threat?: string } | null> {
-  for (const bin of ["clamdscan", "clamscan"]) {
-    try {
-      await execFileAsync(bin, ["--no-summary", filePath], { timeout: 30_000 });
-      return { clean: true };
-    } catch (err: unknown) {
-      const e = err as { code?: number; stdout?: string };
-      if (e.code === 1) {
-        // Exit 1 = virus/PUA found
-        const threat = String(e.stdout ?? "").trim() || "Unknown threat";
-        return { clean: false, threat };
-      }
-      if ((err as NodeJS.ErrnoException).code === "ENOENT") {
-        continue; // binary not installed, try next
-      }
-      // Unexpected error (timeout, permissions, etc.) — skip scan, log
-      console.warn(`[cvValidation] ${bin} scan error:`, err);
-      return null;
-    }
-  }
-  console.warn("[cvValidation] ClamAV not available — skipping malware scan");
-  return null;
-}
-
-/**
- * Sanitize a PDF with Ghostscript (strips embedded JavaScript, AcroForms,
- * active content, external references by rendering to PDF 1.4).
- *
- * On success the sanitized PDF is written to outputPath.
- * Returns true on success, false if Ghostscript is unavailable or fails.
- */
-export async function sanitizePdfWithGhostscript(
-  inputPath: string,
-  outputPath: string,
-): Promise<boolean> {
-  // Windows uses gswin64c (or gswin32c), *nix uses gs
-  const gs = process.platform === "win32" ? "gswin64c" : "gs";
-  try {
-    await execFileAsync(
-      gs,
-      [
-        "-dBATCH",
-        "-dNOPAUSE",
-        "-dQUIET",
-        "-dSAFER",               // sandboxed execution — restricts file system access
-        "-sDEVICE=pdfwrite",
-        "-dCompatibilityLevel=1.4", // PDF 1.4 has no JavaScript support — strips all active content
-        "-dDetectDuplicateImages=true",
-        `-sOutputFile=${outputPath}`,
-        inputPath,
-      ],
-      { timeout: 60_000 },
-    );
-    return true;
-  } catch (err) {
-    if ((err as NodeJS.ErrnoException).code === "ENOENT") {
-      console.warn("[cvValidation] Ghostscript not found — skipping PDF sanitization");
-    } else {
-      console.warn("[cvValidation] Ghostscript error:", err);
-    }
-    return false;
-  }
-}

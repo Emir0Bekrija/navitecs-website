@@ -30,25 +30,19 @@ export async function GET() {
   const weekStart = tzStartOfDay(weekAgoStr);
 
   try {
-    const [pageViewsToday, pageViewsThisWeek, popupClicksTotal, popupClicksToday, avgSessionDurationRaw] =
+    const [pageViewsToday, pageViewsThisWeek, popupClicksTotal, popupClicksToday] =
       await Promise.all([
         pageViewRepo.count({ createdAt: { gte: todayStart } }),
         pageViewRepo.count({ createdAt: { gte: weekStart } }),
         popupClickRepo.count(),
         popupClickRepo.count({ createdAt: { gte: todayStart } }),
-        pageViewRepo.aggregateAvgDuration({ createdAt: { gte: weekStart } }),
       ]);
-
-    const avgSessionDuration = avgSessionDurationRaw
-      ? Math.round(avgSessionDurationRaw)
-      : null;
 
     return NextResponse.json({
       pageViewsToday,
       pageViewsThisWeek,
       popupClicksTotal,
       popupClicksToday,
-      avgSessionDuration,
     });
   } catch (err) {
     console.error("[GET /api/admin/dashboard/quick]", err);

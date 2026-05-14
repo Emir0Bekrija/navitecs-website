@@ -4,7 +4,7 @@ import * as jobRepo from "@/lib/db/repositories/job";
 import { BASE_URL } from "@/lib/baseUrl";
 import { cached } from "@/lib/cache";
 
-export const revalidate = false;
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Careers",

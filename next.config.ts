@@ -12,6 +12,12 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  experimental: {
+    staleTimes: {
+      dynamic: 0,
+      static: 300,
+    },
+  },
   // Prevent Node.js-only packages from being bundled for the browser.
   // mariadb and its dependencies use Node.js built-ins (net, tls, crypto, etc.)
   // and must never appear in the client bundle.

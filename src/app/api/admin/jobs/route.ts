@@ -50,5 +50,6 @@ export async function POST(request: NextRequest) {
   const job = await jobRepo.create({ ...data, id, order: nextOrder });
   invalidatePrefix("jobs");
   revalidatePath("/careers");
+  revalidatePath("/careers/apply");
   return NextResponse.json(job, { status: 201 });
 }

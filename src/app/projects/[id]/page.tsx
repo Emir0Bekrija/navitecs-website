@@ -8,7 +8,7 @@ import { cached } from "@/lib/cache";
 import type { Project, MediaItem } from "@/types/index";
 import type { ContentBlock } from "@/lib/blocks";
 
-export const revalidate = false;
+export const dynamic = "force-dynamic";
 
 type Props = { params: Promise<{ id: string }> };
 

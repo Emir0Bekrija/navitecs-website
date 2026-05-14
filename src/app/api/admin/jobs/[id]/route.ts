@@ -46,6 +46,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
     const job = await jobRepo.update(id, parsed.data);
     invalidatePrefix("jobs");
     revalidatePath("/careers");
+    revalidatePath("/careers/apply");
     return NextResponse.json(job);
   } catch {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -66,5 +67,6 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
 
   invalidatePrefix("jobs");
   revalidatePath("/careers");
+  revalidatePath("/careers/apply");
   return NextResponse.json({ ok: true });
 }

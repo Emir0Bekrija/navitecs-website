@@ -10,8 +10,8 @@ const globalForCache = globalThis as unknown as {
 if (!globalForCache.__memCache) globalForCache.__memCache = store;
 const cache = globalForCache.__memCache;
 
-/** Default TTL: 5 minutes */
-const DEFAULT_TTL_MS = 5 * 60 * 1000;
+/** No automatic expiry — all eviction is explicit via invalidate/invalidatePrefix. */
+const DEFAULT_TTL_MS = Infinity;
 
 /**
  * Get-or-set: returns cached value if fresh, otherwise calls `fn`, caches, and returns.
@@ -23,7 +23,9 @@ export async function cached<T>(
   ttl = DEFAULT_TTL_MS,
 ): Promise<T> {
   const entry = cache.get(key) as CacheEntry<T> | undefined;
-  if (entry && entry.expiresAt > Date.now()) return entry.data;
+  if (entry && entry.expiresAt > Date.now()) {
+    return entry.data;
+  }
 
   const data = await fn();
   cache.set(key, { data, expiresAt: Date.now() + ttl });

@@ -9,7 +9,7 @@ function createPool() {
     password: process.env.DATABASE_PASSWORD ?? "",
     database: process.env.DATABASE_NAME ?? "navitecs",
     connectionLimit: 10,
-    timezone: "+00:00",
+    timezone: "auto",
     // Return dates as Date objects, bigint as number
     bigIntAsNumber: true,
     insertIdAsNumber: true,
